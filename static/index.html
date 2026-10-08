@@ -1,0 +1,1344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Awaaz Adhikar | AI-Powered Citizen Grievance Documentation & Verification Workspace</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- html2pdf.js for direct client-side PDF export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <!-- Google Fonts: Inter, Noto Sans Devanagari & Noto Sans Bengali -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Bengali:wght@400;600;700&family=Noto+Sans+Devanagari:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            gov: {
+              50: '#f0fdfa',
+              100: '#ccfbf1',
+              600: '#0d9488',
+              700: '#0f766e',
+              800: '#115e59',
+              900: '#134e4a',
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col font-sans">
+
+  <!-- TOP CIVIC HEADER -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-16">
+        
+        <!-- BRAND & CIVIC TITLE -->
+        <div class="flex items-center space-x-3 cursor-pointer" onclick="handleBrandClick()">
+          <div class="w-10 h-10 rounded-lg bg-gov-700 flex items-center justify-center text-white font-bold text-xl shadow-inner">
+            🎙️
+          </div>
+          <div>
+            <div class="flex items-center space-x-2">
+              <span class="text-xl font-bold tracking-tight text-slate-900">Awaaz Adhikar</span>
+              <span class="text-xs font-semibold px-2 py-0.5 rounded bg-gov-100 text-gov-800 border border-gov-600/30">आवाज़ अधिकार</span>
+              <span id="header-operator-badge-tag" class="hidden text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300">Operator Workspace</span>
+            </div>
+            <p class="text-xs text-slate-500 font-medium hidden sm:block" data-i18n="brand_sub">AI-Powered Citizen Grievance Documentation & Verification System</p>
+          </div>
+        </div>
+
+        <!-- RIGHT CONTROLS -->
+        <div class="flex items-center space-x-3">
+          
+          <!-- SerpApi Badge -->
+          <div id="serp-badge-btn" class="flex items-center space-x-1.5 px-2.5 py-1 bg-blue-50 border border-blue-200 rounded-md text-xs font-semibold text-blue-800 cursor-pointer hover:bg-blue-100 transition" onclick="openSerpModal()" title="Click to view SerpApi Configuration">
+            <span class="w-2 h-2 rounded-full bg-blue-600 animate-pulse"></span>
+            <span>SerpApi Gov Search</span>
+            <span id="serp-badge-status" class="bg-blue-600 text-white text-[10px] px-1.5 py-0.2 rounded font-mono">DEMO MODE</span>
+          </div>
+
+          <!-- Language Selector -->
+          <div class="flex items-center bg-slate-50 border border-slate-300 rounded-md px-2 py-1">
+            <span class="text-xs text-slate-500 mr-1.5 font-medium">🌐</span>
+            <select id="lang-select" onchange="changeLanguage(this.value)" class="bg-transparent text-xs font-semibold text-slate-700 focus:outline-none cursor-pointer">
+              <option value="hi" selected>Hindi (हिंदी)</option>
+              <option value="mr">Marathi (मराठी)</option>
+              <option value="bn">Bengali (বাংলা)</option>
+              <option value="en">English</option>
+            </select>
+          </div>
+
+          <!-- Public Header Actions (Visible when logged out) -->
+          <div id="header-guest-actions" class="flex items-center space-x-2">
+            <button onclick="launchInteractiveDemo()" class="hidden sm:inline-flex items-center px-3 py-1.5 rounded-lg bg-gov-50 hover:bg-gov-100 text-gov-800 font-semibold text-xs border border-gov-300 transition">
+              🚀 Try Demo
+            </button>
+            <button onclick="switchView('login')" class="inline-flex items-center px-3.5 py-1.5 rounded-lg bg-gov-700 hover:bg-gov-800 text-white font-semibold text-xs shadow-sm transition">
+              🔐 Operator Login
+            </button>
+          </div>
+
+          <!-- Authenticated Operator Badge & Logout (Visible when logged in) -->
+          <div id="header-auth-actions" class="hidden flex items-center space-x-3 pl-2 border-l border-slate-200">
+            <div class="hidden md:flex items-center space-x-2">
+              <div class="w-8 h-8 rounded-full bg-gov-100 border border-gov-300 flex items-center justify-center text-gov-800 text-xs font-bold">
+                OP
+              </div>
+              <div class="text-left leading-tight">
+                <div id="operator-display-name" class="text-xs font-bold text-slate-800">Suresh Patil</div>
+                <div id="operator-display-center" class="text-[10px] text-emerald-600 font-semibold">● CSC Operator #4102</div>
+              </div>
+            </div>
+            <button onclick="handleLogout()" class="px-2.5 py-1 text-xs text-slate-600 hover:text-rose-700 hover:bg-rose-50 border border-slate-200 rounded font-medium transition" title="Logout">
+              🚪 Logout
+            </button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- SUB-NAV TABS (Visible when authenticated) -->
+    <div id="authenticated-subnav" class="hidden bg-slate-50 border-t border-slate-200 px-4 sm:px-6 lg:px-8">
+      <div class="max-w-7xl mx-auto flex space-x-8">
+        <button id="nav-dashboard" onclick="switchView('dashboard')" class="py-2.5 px-1 border-b-2 border-gov-700 text-gov-800 text-xs sm:text-sm font-semibold transition flex items-center space-x-1.5">
+          <span>📊</span>
+          <span data-i18n="nav_dashboard">Operator Dashboard</span>
+        </button>
+        <button id="nav-workspace" onclick="switchView('workspace')" class="py-2.5 px-1 border-b-2 border-transparent text-slate-600 hover:text-slate-900 text-xs sm:text-sm font-semibold transition flex items-center space-x-1.5">
+          <span>📝</span>
+          <span data-i18n="nav_workspace">Grievance Workspace</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+    <!-- ======================================================== -->
+    <!-- VIEW 1: PUBLIC LANDING PAGE (DEFAULT FOR PUBLIC VISITOR) -->
+    <!-- ======================================================== -->
+    <div id="view-landing" class="space-y-12 py-4">
+      
+      <!-- HERO SECTION -->
+      <div class="bg-gradient-to-b from-white to-slate-50 rounded-2xl border border-slate-200 p-8 sm:p-12 shadow-sm text-center max-w-4xl mx-auto space-y-6">
+        <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-gov-50 border border-gov-200 text-xs font-semibold text-gov-800">
+          <span>🇮🇳</span>
+          <span data-i18n="landing_tagline">Public Service Citizen Grievance Assistance Platform</span>
+        </div>
+        
+        <h1 class="text-3xl sm:text-5xl font-extrabold text-slate-900 tracking-tight leading-tight">
+          AWAAZ ADHIKAR
+        </h1>
+        <p class="text-lg sm:text-xl font-semibold text-gov-700 max-w-2xl mx-auto">
+          AI-Powered Citizen Grievance Documentation &amp; Verification Workspace
+        </p>
+
+        <p class="text-slate-600 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed" data-i18n="landing_hero_msg">
+          अपनी समस्या अपनी भाषा में बताएं। आवाज़ अधिकार आपकी बात समझने, संबंधित आधिकारिक सरकारी जानकारी ढूँढने और आवेदन तैयार करने में ऑपरेटर की मदद करता है।
+        </p>
+
+        <!-- CTA Buttons -->
+        <div class="flex flex-col sm:flex-row justify-center items-center gap-4 pt-4">
+          <button onclick="launchInteractiveDemo()" class="w-full sm:w-auto px-8 py-4 rounded-xl bg-gov-700 hover:bg-gov-800 text-white font-bold text-base shadow-md hover:shadow-lg transition flex items-center justify-center space-x-2">
+            <span>🚀 Try Interactive Demo</span>
+            <span class="text-xs opacity-80">(No Login Required)</span>
+          </button>
+          <button onclick="openCitizenTrackModal()" class="w-full sm:w-auto px-8 py-4 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-base shadow-md hover:shadow-lg transition flex items-center justify-center space-x-2">
+            <span>📋 Track My Complaint</span>
+          </button>
+          <button onclick="switchView('login')" class="w-full sm:w-auto px-8 py-4 rounded-xl bg-white hover:bg-slate-50 text-slate-800 font-bold text-base border border-slate-300 shadow-sm transition flex items-center justify-center space-x-2">
+            <span>🔐 Operator Login</span>
+          </button>
+        </div>
+
+        <!-- Trust Badges -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-6 border-t border-slate-100 text-xs font-semibold text-slate-600">
+          <div class="flex items-center justify-center space-x-1.5 p-2 bg-white rounded-lg border border-slate-200 shadow-2xs">
+            <span class="text-emerald-600">✓</span>
+            <span>Voice-First Native Dialects</span>
+          </div>
+          <div class="flex items-center justify-center space-x-1.5 p-2 bg-white rounded-lg border border-slate-200 shadow-2xs">
+            <span class="text-blue-600">✓</span>
+            <span>Strict .gov.in / .nic.in SerpApi Filter</span>
+          </div>
+          <div class="flex items-center justify-center space-x-1.5 p-2 bg-white rounded-lg border border-slate-200 shadow-2xs">
+            <span class="text-gov-700">✓</span>
+            <span>100% Operator Verification</span>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- HOW IT WORKS (5 STEPS) -->
+      <div class="space-y-6 max-w-5xl mx-auto">
+        <div class="text-center space-y-1">
+          <h2 class="text-2xl font-bold text-slate-900" data-i18n="how_it_works_title">How Awaaz Adhikar Works</h2>
+          <p class="text-sm text-slate-500">From spoken citizen grievance to formal bilingual government petition</p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
+          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-xs space-y-3">
+            <div class="w-10 h-10 rounded-lg bg-gov-100 text-gov-800 flex items-center justify-center font-bold text-base">1</div>
+            <h3 class="font-bold text-slate-900 text-sm">Tell Your Problem</h3>
+            <p class="text-xs text-slate-600 leading-relaxed">Citizen speaks in Hindi, Marathi, Bengali, or English. Voice recording or text entry.</p>
+          </div>
+          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-xs space-y-3">
+            <div class="w-10 h-10 rounded-lg bg-gov-100 text-gov-800 flex items-center justify-center font-bold text-base">2</div>
+            <h3 class="font-bold text-slate-900 text-sm">Review Information</h3>
+            <p class="text-xs text-slate-600 leading-relaxed">AI extracts structured facts. Operator confirms name, village, district, issue, duration.</p>
+          </div>
+          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-xs space-y-3">
+            <div class="w-10 h-10 rounded-lg bg-gov-100 text-gov-800 flex items-center justify-center font-bold text-base">3</div>
+            <h3 class="font-bold text-slate-900 text-sm">Verify &amp; Find Info</h3>
+            <p class="text-xs text-slate-600 leading-relaxed">SerpApi discovers statutory links from official .gov.in portals. Operator audits each source.</p>
+          </div>
+          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-xs space-y-3">
+            <div class="w-10 h-10 rounded-lg bg-gov-100 text-gov-800 flex items-center justify-center font-bold text-base">4</div>
+            <h3 class="font-bold text-slate-900 text-sm">Create Application</h3>
+            <p class="text-xs text-slate-600 leading-relaxed">Bilingual professional document generated. Operator reviews English &amp; regional wording before PDF.</p>
+          </div>
+          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-xs space-y-3">
+            <div class="w-10 h-10 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-base">5</div>
+            <h3 class="font-bold text-slate-900 text-sm">Track Your Case</h3>
+            <p class="text-xs text-slate-600 leading-relaxed">Citizen gets a Case ID &amp; can track status anytime using their mobile number and a one-time code.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- FEATURE CARDS (4) -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 max-w-5xl mx-auto">
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-xs space-y-2">
+          <div class="text-2xl">🎙️</div>
+          <h4 class="font-bold text-slate-900 text-sm">Voice-First Accessibility</h4>
+          <p class="text-xs text-slate-600 leading-relaxed">Designed for elderly, rural, and low-literacy citizens who face barriers typing into complex online forms.</p>
+        </div>
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-xs space-y-2">
+          <div class="text-2xl">🌐</div>
+          <h4 class="font-bold text-slate-900 text-sm">Official Source Discovery</h4>
+          <p class="text-xs text-slate-600 leading-relaxed">Finds live statutory procedures from verified .gov.in and .nic.in portals via SerpApi. No unofficial sources.</p>
+        </div>
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-xs space-y-2">
+          <div class="text-2xl">🛡️</div>
+          <h4 class="font-bold text-slate-900 text-sm">Human Verification</h4>
+          <p class="text-xs text-slate-600 leading-relaxed">Operator confirms every fact. Missing information is flagged. Contradictions highlighted. Zero AI hallucination.</p>
+        </div>
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-xs space-y-2">
+          <div class="text-2xl">📄</div>
+          <h4 class="font-bold text-slate-900 text-sm">Professional Bilingual Applications</h4>
+          <p class="text-xs text-slate-600 leading-relaxed">Formal government-application tone in the citizen's language + professional English. Validated before PDF.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- VIEW 2: OPERATOR LOGIN PAGE                              -->
+    <!-- ======================================================== -->
+    <div id="view-login" class="max-w-md mx-auto py-10 hidden">
+      <div class="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm space-y-6">
+        <div class="text-center space-y-2">
+          <div class="w-12 h-12 rounded-xl bg-gov-700 mx-auto flex items-center justify-center text-white text-2xl font-bold shadow-sm">
+            🎙️
+          </div>
+          <h2 class="text-xl font-bold text-slate-900">AWAAZ ADHIKAR</h2>
+          <p class="text-xs font-semibold text-gov-800 uppercase tracking-wider">Operator Workspace Login</p>
+          <p class="text-xs text-slate-500">Authorized access for CSC operators, rural helpdesks, and caseworkers</p>
+        </div>
+
+        <!-- Login Error Alert -->
+        <div id="login-error-alert" class="hidden p-3 rounded-lg bg-rose-50 border border-rose-300 text-rose-800 text-xs font-medium"></div>
+
+        <!-- Login Form -->
+        <form id="operator-login-form" onsubmit="handleOperatorLogin(event)" class="space-y-4">
+          <div class="space-y-1">
+            <label class="text-xs font-semibold text-slate-700">Operator Email / ID</label>
+            <input type="email" id="login-email" required placeholder="operator@awaazadhikar.gov.in" class="w-full text-xs p-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-gov-600 focus:outline-none">
+          </div>
+
+          <div class="space-y-1">
+            <label class="text-xs font-semibold text-slate-700">Password</label>
+            <input type="password" id="login-password" required placeholder="••••••••" class="w-full text-xs p-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-gov-600 focus:outline-none">
+          </div>
+
+          <button type="submit" id="btn-submit-login" class="w-full py-3 bg-gov-700 hover:bg-gov-800 text-white font-bold text-xs rounded-lg shadow-sm transition">
+            🔐 Login to Workspace
+          </button>
+        </form>
+
+        <div class="relative flex py-1 items-center">
+          <div class="flex-grow border-t border-slate-200"></div>
+          <span class="flex-shrink mx-3 text-[10px] text-slate-400 uppercase font-semibold">Or Instant Demo Access</span>
+          <div class="flex-grow border-t border-slate-200"></div>
+        </div>
+
+        <!-- One-Click Demo Login Button for Judges -->
+        <button onclick="handleDemoLogin()" id="btn-demo-login" class="w-full py-2.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-bold text-xs rounded-lg shadow-xs transition flex items-center justify-center space-x-2">
+          <span>⚡ One-Click Demo Login (CSC Operator #4102)</span>
+        </button>
+
+        <div class="text-center pt-2">
+          <button onclick="switchView('landing')" class="text-xs text-slate-500 hover:text-slate-800 font-medium">
+            ← Back to Public Website
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- VIEW 3: PROTECTED OPERATOR DASHBOARD                     -->
+    <!-- ======================================================== -->
+    <div id="view-dashboard" class="space-y-6 hidden">
+      
+      <!-- WELCOME / PURPOSE BANNER -->
+      <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div class="space-y-1">
+            <h2 class="text-lg font-bold text-slate-900" data-i18n="dash_welcome">Rural Grievance Documentation Station</h2>
+            <p class="text-xs sm:text-sm text-slate-600">
+              Transform spoken complaints into official, verified, and source-backed applications for government portals without conversational AI ambiguity.
+            </p>
+            <div class="flex flex-wrap gap-2 pt-1 text-xs">
+              <span class="inline-flex items-center px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
+                ✓ Human-in-the-Loop Operator Verification
+              </span>
+              <span class="inline-flex items-center px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
+                ✓ SerpApi Official Government Source Discovery (.gov.in / .nic.in)
+              </span>
+              <span class="inline-flex items-center px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">
+                ✓ Multilingual + Bilingual PDF Generation
+              </span>
+            </div>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="startNewCase()" class="inline-flex items-center justify-center px-4 py-2.5 rounded-lg bg-gov-700 hover:bg-gov-800 text-white font-semibold text-xs sm:text-sm shadow transition">
+              ➕ Start New Citizen Case
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- METRICS GRID -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
+          <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Handled Cases</div>
+          <div id="stat-total" class="text-2xl font-bold text-slate-900 mt-1">0</div>
+          <div class="text-[11px] text-slate-400 mt-0.5">Recorded in SQLite</div>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
+          <div class="text-xs font-semibold text-amber-600 uppercase tracking-wider">Under Operator Review</div>
+          <div id="stat-in-review" class="text-2xl font-bold text-amber-700 mt-1">0</div>
+          <div class="text-[11px] text-slate-400 mt-0.5">Awaiting verification</div>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
+          <div class="text-xs font-semibold text-emerald-600 uppercase tracking-wider">Operator Verified</div>
+          <div id="stat-verified" class="text-2xl font-bold text-emerald-700 mt-1">0</div>
+          <div class="text-[11px] text-slate-400 mt-0.5">Audit complete</div>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
+          <div class="text-xs font-semibold text-blue-600 uppercase tracking-wider">Generated Documents</div>
+          <div id="stat-generated" class="text-2xl font-bold text-blue-700 mt-1">0</div>
+          <div class="text-[11px] text-slate-400 mt-0.5">Bilingual applications</div>
+        </div>
+      </div>
+
+      <!-- DEMO SCENARIO CARDS -->
+      <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs space-y-3">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="font-bold text-slate-900 text-sm">⚡ Instant Demo Scenarios (One-Click Pre-loads)</h3>
+            <p class="text-xs text-slate-500">Curated real-world grievances with authentic regional language transcripts</p>
+          </div>
+          <span class="text-[10px] px-2 py-0.5 rounded bg-blue-50 text-blue-800 font-mono">Demo Mode Ready</span>
+        </div>
+
+        <div id="demo-chips-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 pt-1">
+          <!-- Populated dynamically via JS -->
+        </div>
+      </div>
+
+      <!-- RECENT CASES TABLE -->
+      <div class="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+        <div class="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+          <h3 class="font-bold text-slate-900 text-sm">📋 Recent Grievance Applications</h3>
+          <button id="btn-refresh-dashboard" onclick="refreshDashboard()" class="text-xs text-gov-700 hover:text-gov-800 font-semibold">🔄 Refresh</button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-slate-200 text-xs">
+            <thead class="bg-slate-50 text-slate-600">
+              <tr>
+                <th class="px-4 py-3 text-left font-semibold">Case ID</th>
+                <th class="px-4 py-3 text-left font-semibold">Citizen</th>
+                <th class="px-4 py-3 text-left font-semibold">Location</th>
+                <th class="px-4 py-3 text-left font-semibold">Grievance Type</th>
+                <th class="px-4 py-3 text-left font-semibold">Status</th>
+                <th class="px-4 py-3 text-left font-semibold">Date</th>
+                <th class="px-4 py-3 text-right font-semibold">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="cases-tbody" class="divide-y divide-slate-100 text-slate-700">
+              <!-- Populated dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- VIEW 4: PROTECTED 4-STEP INTAKE & VERIFICATION WORKSPACE -->
+    <!-- ======================================================== -->
+    <div id="view-workspace" class="space-y-6 hidden">
+      
+      <!-- 4-STEP WORKFLOW STEPPER INDICATOR -->
+      <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-xs">
+        <div class="flex items-center justify-between text-xs font-semibold text-slate-500 overflow-x-auto pb-1 gap-2">
+          
+          <!-- Step 1 Tab -->
+          <button onclick="goToStep(1)" id="step-tab-1" class="step-btn flex items-center space-x-1.5 text-gov-700 font-bold whitespace-nowrap">
+            <span class="w-6 h-6 rounded-full bg-gov-700 text-white flex items-center justify-center text-xs">1</span>
+            <span data-i18n="step1_nav">अपनी समस्या बताइए (Tell Problem)</span>
+          </button>
+          <div class="step-line" id="line-1"></div>
+
+          <!-- Step 2 Tab -->
+          <button onclick="goToStep(2)" id="step-tab-2" class="step-btn flex items-center space-x-1.5 text-slate-400 whitespace-nowrap">
+            <span class="w-6 h-6 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-xs">2</span>
+            <span data-i18n="step2_nav">जानकारी समीक्षा (Review Details)</span>
+          </button>
+          <div class="step-line" id="line-2"></div>
+
+          <!-- Step 3 Tab -->
+          <button onclick="goToStep(3)" id="step-tab-3" class="step-btn flex items-center space-x-1.5 text-slate-400 whitespace-nowrap">
+            <span class="w-6 h-6 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-xs">3</span>
+            <span data-i18n="step3_nav">सरकारी जानकारी खोज (Find Sources)</span>
+          </button>
+          <div class="step-line" id="line-3"></div>
+
+          <!-- Step 4 Tab -->
+          <button onclick="goToStep(4)" id="step-tab-4" class="step-btn flex items-center space-x-1.5 text-slate-400 whitespace-nowrap">
+            <span class="w-6 h-6 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-xs">4</span>
+            <span data-i18n="step4_nav">आवेदन पत्र तैयार (Create Application)</span>
+          </button>
+
+        </div>
+      </div>
+
+      <!-- ACTIVE CASE HEADER SUMMARY -->
+      <div class="bg-slate-50 border border-slate-200 rounded-lg p-3 flex flex-wrap justify-between items-center text-xs">
+        <div class="flex items-center space-x-3">
+          <span class="font-bold text-slate-800">Case ID: <span id="current-case-id" class="font-mono text-gov-700 font-bold">CASE-NEW</span></span>
+          <span class="text-slate-400">|</span>
+          <span>Citizen: <strong id="current-citizen-name">Pending Input</strong></span>
+          <span class="text-slate-400">|</span>
+          <span>Status: <span id="current-case-status" class="px-2 py-0.5 rounded font-semibold bg-amber-100 text-amber-800">Needs Review</span></span>
+        </div>
+        <div class="flex items-center space-x-2">
+          <button onclick="saveCurrentCaseState()" class="px-2.5 py-1 bg-white border border-slate-300 hover:bg-slate-50 rounded text-slate-700 font-medium">💾 Save Progress</button>
+          <button id="btn-refresh-workspace" onclick="refreshDashboard()" class="px-2.5 py-1 bg-white border border-slate-300 hover:bg-slate-50 rounded text-slate-700 font-medium">🔄 Refresh</button>
+          <button onclick="switchView('dashboard')" class="px-2.5 py-1 bg-white border border-slate-300 hover:bg-slate-50 rounded text-slate-700 font-medium">← Dashboard</button>
+        </div>
+      </div>
+
+      <!-- STEP 1: TELL YOUR PROBLEM (अपनी समस्या बताइए) -->
+      <div id="step-panel-1" class="step-panel space-y-4">
+        <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-xs space-y-5">
+          
+          <!-- AI Voice Guide Card -->
+          <div class="bg-gov-50 border border-gov-200 rounded-xl p-4 flex items-center justify-between gap-3">
+            <div class="flex items-center space-x-3">
+              <span class="text-2xl">🤖</span>
+              <div>
+                <span class="text-[10px] font-bold text-gov-800 uppercase tracking-wider" data-i18n="ai_voice_guide">AI Voice Guide</span>
+                <p id="guide-step1-text" class="text-xs sm:text-sm font-semibold text-slate-800">नमस्ते। अपनी समस्या बताइए।</p>
+                <p data-tts-note-for="guide-step1-text" class="text-[11px] text-amber-800" aria-live="polite"></p>
+              </div>
+            </div>
+            <button onclick="speakVoiceGuide('guide-step1-text')" class="px-3 py-1.5 bg-white border border-gov-300 hover:bg-gov-100 text-gov-800 rounded-lg text-xs font-bold flex items-center space-x-1 whitespace-nowrap shadow-2xs">
+              <span>🔊</span>
+              <span data-i18n="btn_listen">सुनें / Listen</span>
+            </button>
+          </div>
+
+          <!-- Citizen Informed Consent Checkbox -->
+          <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-start space-x-3">
+            <input type="checkbox" id="consent-check" checked class="mt-0.5 h-4 w-4 text-gov-600 rounded border-slate-300 cursor-pointer">
+            <label for="consent-check" class="text-xs text-amber-900 cursor-pointer">
+              <strong>Citizen Informed Consent:</strong> The citizen has been informed that this workspace assists in documenting their verbal grievance into an official written application and discovers applicable government rules. No unauthorized data sharing occurs.
+            </label>
+          </div>
+
+          <!-- Recording Error / Permission Banner -->
+          <div id="record-error-banner" class="hidden bg-rose-50 border border-rose-300 rounded-xl p-4 text-xs text-rose-900 space-y-2">
+            <div class="flex items-start justify-between">
+              <div class="flex items-center space-x-2 font-bold text-rose-800">
+                <span class="text-base">⚠️</span>
+                <span>Microphone Access Notice:</span>
+              </div>
+              <button onclick="dismissRecordError()" class="text-rose-500 hover:text-rose-700 font-bold text-base leading-none">&times;</button>
+            </div>
+            <p id="record-error-message" class="text-rose-700 font-medium"></p>
+            <div id="record-error-hint" class="text-[11px] text-rose-600 bg-white/70 p-2 rounded border border-rose-200"></div>
+          </div>
+
+          <!-- Audio Recording Control Box -->
+          <div class="border-2 border-dashed border-slate-200 rounded-xl p-8 text-center space-y-4">
+            <div id="mic-icon-container" class="w-20 h-20 mx-auto rounded-full bg-gov-50 flex items-center justify-center text-3xl shadow-sm text-gov-700 transition">
+              🎙️
+            </div>
+
+            <div class="space-y-1">
+              <h4 id="record-status-text" class="text-sm font-bold text-slate-800" data-i18n="record_status_idle">Click below to start recording grievance</h4>
+              <p id="record-subtext" class="text-xs text-slate-500" data-i18n="record_supported">Supports Hindi, Marathi, Bengali, and English speech</p>
+              <div class="flex items-center justify-center space-x-2 pt-1">
+                <span id="record-timer" class="font-mono text-xs font-bold text-slate-700 px-2 py-0.5 rounded bg-slate-100">00:00</span>
+                <span id="stt-live-indicator" class="hidden text-[10px] px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-mono font-bold animate-pulse" data-i18n="stt_live">● Live Speech Recognition Active</span>
+              </div>
+            </div>
+
+            <!-- Waveform Animation Simulation -->
+            <div id="waveform" class="flex justify-center items-center space-x-1.5 h-8 hidden">
+              <div class="wave-bar" style="animation-delay: 0.1s"></div>
+              <div class="wave-bar" style="animation-delay: 0.3s"></div>
+              <div class="wave-bar" style="animation-delay: 0.2s"></div>
+              <div class="wave-bar" style="animation-delay: 0.4s"></div>
+              <div class="wave-bar" style="animation-delay: 0.15s"></div>
+              <div class="wave-bar" style="animation-delay: 0.35s"></div>
+            </div>
+
+            <!-- Record Buttons -->
+            <div class="flex flex-wrap justify-center items-center gap-3">
+              <button id="btn-start-record" onclick="startVoiceRecording()" class="px-6 py-3 bg-gov-700 hover:bg-gov-800 text-white text-xs sm:text-sm font-bold rounded-lg shadow-sm flex items-center space-x-2">
+                <span>🔴 Start Voice Recording</span>
+              </button>
+              <button id="btn-stop-record" onclick="stopVoiceRecording()" class="px-6 py-3 bg-rose-600 hover:bg-rose-700 text-white text-xs sm:text-sm font-bold rounded-lg shadow-sm hidden flex items-center space-x-2">
+                <span>⏹️ Stop Recording</span>
+              </button>
+              <button id="btn-rerecord" onclick="rerecordVoice()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-300 hidden flex items-center space-x-1.5">
+                <span>🔄 Re-record Audio</span>
+              </button>
+            </div>
+
+            <!-- Audio Playback Preview Box -->
+            <div id="audio-preview-box" class="hidden pt-2 border-t border-slate-100 space-y-2">
+              <div class="text-xs font-bold text-slate-700 flex items-center justify-center space-x-1">
+                <span>🎧 Recorded Audio Playback:</span>
+                <span id="audio-duration-tag" class="text-[10px] text-slate-500 font-mono"></span>
+              </div>
+              <audio id="recorded-audio-player" controls class="w-full max-w-md mx-auto"></audio>
+              <div class="flex justify-center space-x-3 text-[11px]">
+                <a id="audio-download-link" href="#" download="citizen_grievance.webm" class="text-blue-600 hover:underline flex items-center space-x-1">
+                  <span>💾 Download Audio File (.webm)</span>
+                </a>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Text Fallback & Editable Transcript Box -->
+          <div class="space-y-2 pt-2 border-t border-slate-100">
+            <div class="flex justify-between items-center">
+              <label class="text-xs font-bold text-slate-700" data-i18n="lbl_transcript_input">Transcript / Text Fallback Input:</label>
+              <span class="text-[11px] text-slate-500">Auto-filled by speech-to-text or editable directly</span>
+            </div>
+            <textarea id="raw-input-text" rows="4" class="w-full text-xs p-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-gov-600 focus:outline-none" placeholder="उदाहरण: मेरा नाम रमेश कुमार है। मुझे 3 महीने से वृद्धावस्था पेंशन नहीं मिली है। मैं रामपुर गाँव, जिला सीतापुर, उत्तर प्रदेश से हूँ।"></textarea>
+          </div>
+
+          <!-- AI Understood Confirmation Card (Step 1 -> Step 2 transition helper) -->
+          <div id="understood-confirm-box" class="hidden bg-emerald-50 border border-emerald-200 rounded-xl p-4 space-y-3">
+            <div class="flex items-center space-x-2 text-emerald-900 font-bold text-xs sm:text-sm">
+              <span>🤖</span>
+              <span data-i18n="ai_confirmation_label">AI Confirmation Prompt:</span>
+            </div>
+            <p id="understood-confirm-text" class="text-sm text-emerald-950 font-medium"></p>
+            <div class="flex gap-2">
+              <button id="btn-confirm-proceed" onclick="confirmAndProceedToStep2()" class="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold rounded-lg shadow-2xs">
+                <span data-i18n="confirmation_yes">✓ हाँ, आगे बढ़ें (Yes, Proceed)</span>
+              </button>
+              <button onclick="focusTranscriptEdit()" class="px-3 py-2 bg-white border border-emerald-300 text-emerald-800 text-xs font-semibold rounded-lg">
+                <span data-i18n="confirmation_edit">✏ सुधारें (Edit)</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Action -->
+          <div class="flex justify-end pt-3">
+            <button id="btn-step1-next" onclick="processVoiceOrTextInput()" class="px-6 py-3 bg-gov-700 hover:bg-gov-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs sm:text-sm font-bold rounded-lg shadow-sm flex items-center space-x-2">
+              <span>Review Information →</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 2: REVIEW INFORMATION (हमने आपकी बात ऐसे समझी) -->
+      <div id="step-panel-2" class="step-panel space-y-4 hidden">
+        <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-xs space-y-5">
+          
+          <!-- AI Voice Guide Card -->
+          <div class="bg-gov-50 border border-gov-200 rounded-xl p-4 flex items-center justify-between gap-3">
+            <div class="flex items-center space-x-3">
+              <span class="text-2xl">🤖</span>
+              <div>
+                <span class="text-[10px] font-bold text-gov-800 uppercase tracking-wider" data-i18n="ai_voice_guide">AI Voice Guide</span>
+                <p id="guide-step2-text" class="text-xs sm:text-sm font-semibold text-slate-800">कृपया निकाली गई जानकारी की समीक्षा करें और पुष्टि करें।</p>
+                <p data-tts-note-for="guide-step2-text" class="text-[11px] text-amber-800" aria-live="polite"></p>
+              </div>
+            </div>
+            <button onclick="speakVoiceGuide('guide-step2-text')" class="px-3 py-1.5 bg-white border border-gov-300 hover:bg-gov-100 text-gov-800 rounded-lg text-xs font-bold flex items-center space-x-1 whitespace-nowrap shadow-2xs">
+              <span>🔊</span>
+              <span data-i18n="btn_listen">सुनें / Listen</span>
+            </button>
+          </div>
+
+          <!-- Location Mismatch Warning Alert -->
+          <div id="location-mismatch-box" class="hidden bg-rose-50 border border-rose-300 rounded-lg p-3 text-xs text-rose-800 font-semibold flex items-center space-x-2">
+            <span>⚠️</span>
+            <span id="location-mismatch-text">District does not belong to the selected State. Please review.</span>
+          </div>
+
+          <!-- Missing Fields Alert Box -->
+          <div id="missing-fields-box" class="hidden bg-amber-50 border border-amber-300 rounded-lg p-4 space-y-2">
+            <div class="flex items-center space-x-2 text-amber-900 font-bold text-xs">
+              <span>⚠️ Some information is missing. Please complete the highlighted fields:</span>
+            </div>
+            <ul id="missing-fields-list" class="text-xs text-amber-800 list-disc pl-5 space-y-1"></ul>
+          </div>
+
+          <!-- Contradiction Warning Alert -->
+          <div id="contradiction-alert-box" class="hidden bg-rose-50 border border-rose-300 rounded-lg p-4 space-y-2">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center space-x-2 text-rose-800 font-bold text-xs">
+                <span>⚠️ Please review this information (Possible Mismatch Detected):</span>
+              </div>
+              <div class="flex space-x-2">
+                <button onclick="focusFirstContradictionField()" class="px-2 py-1 bg-white border border-rose-300 text-rose-800 rounded text-[11px] font-semibold">✏ Edit</button>
+                <button onclick="dismissContradictionAlert()" class="px-2 py-1 bg-rose-200 text-rose-900 rounded text-[11px] font-semibold">✓ Confirm as Correct</button>
+              </div>
+            </div>
+            <ul id="contradiction-list" class="text-xs text-rose-700 list-disc pl-5 space-y-1"></ul>
+          </div>
+
+          <!-- Simple Confirmation Card (Maine ye samjha) -->
+          <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+            <div class="flex justify-between items-center text-xs">
+              <strong class="text-slate-800 flex items-center space-x-1.5">
+                <span>📋</span>
+                <span>Maine ye samjha (Factual Summary):</span>
+              </strong>
+              <span class="text-[11px] text-slate-500">Operator Review & Confirmation</span>
+            </div>
+            <div id="summary-badge-grid" class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <!-- Transcript Comparison Grid -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="space-y-1">
+              <label class="text-xs font-bold text-slate-700">Original Citizen Spoken Statement</label>
+              <div id="original-transcript-display" class="p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-600 min-h-[90px] whitespace-pre-wrap">
+                (Waiting for input...)
+              </div>
+            </div>
+            <div class="space-y-1">
+              <label class="text-xs font-bold text-gov-800">Operator Corrected Transcript</label>
+              <textarea id="edited-transcript-input" rows="4" class="w-full text-xs p-3 rounded-lg border border-gov-600 focus:ring-2 focus:ring-gov-600 focus:outline-none" placeholder="Rectify dialect words if needed..."></textarea>
+            </div>
+          </div>
+
+          <!-- Extracted Fields Editable Grid with Cascading State -> District -->
+          <div class="border-t border-slate-100 pt-4 space-y-3">
+            <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider">Citizen & Grievance Information</h4>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              
+              <!-- Citizen Name -->
+              <div class="space-y-1">
+                <label class="text-xs font-semibold text-slate-700">Citizen Name (नाम) *</label>
+                <input type="text" id="field-name" placeholder="Full legal name" class="w-full text-xs p-2.5 rounded border border-slate-300 focus:ring-1 focus:ring-gov-600 focus:outline-none">
+              </div>
+
+              <!-- Citizen Mobile Number & Real SMS OTP Verification -->
+              <div class="space-y-1">
+                <div class="flex items-center justify-between">
+                  <label class="text-xs font-semibold text-slate-700">Citizen Mobile (मोबाइल नंबर) *</label>
+                  <span id="mobile-verification-badge" class="text-[10px] font-bold px-1.5 py-0.2 rounded bg-amber-100 text-amber-800 border border-amber-300">Pending</span>
+                </div>
+                <div class="flex gap-1.5">
+                  <input type="tel" id="field-citizen-mobile" maxlength="10" placeholder="10-digit mobile" class="w-full text-xs p-2.5 rounded border border-slate-300 focus:ring-1 focus:ring-gov-600 focus:outline-none">
+                  <button type="button" id="btn-send-case-otp" onclick="sendCaseCreationOtp()" class="px-3 py-1.5 bg-gov-700 hover:bg-gov-800 text-white rounded text-xs font-semibold whitespace-nowrap transition">
+                    Send OTP
+                  </button>
+                </div>
+              </div>
+
+              <!-- Inline OTP Verification Box -->
+              <div id="case-otp-verification-section" class="hidden col-span-1 md:col-span-2 lg:col-span-3 bg-gov-50 border border-gov-300 rounded-lg p-3 space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-bold text-gov-900">📲 Enter OTP Received via SMS</span>
+                  <span class="text-[10px] text-slate-500 font-medium">Valid for 5 minutes</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <input type="text" id="field-case-otp" maxlength="6" placeholder="6-digit OTP" class="text-xs p-2 rounded border border-slate-300 focus:ring-1 focus:ring-gov-600 focus:outline-none font-mono tracking-widest text-center max-w-[140px]">
+                  <button type="button" id="btn-verify-case-otp" onclick="verifyCaseCreationOtp()" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-semibold transition">
+                    Verify OTP
+                  </button>
+                  <span id="case-otp-msg" class="text-xs font-medium"></span>
+                </div>
+              </div>
+
+              <!-- Village / Town -->
+              <div class="space-y-1">
+                <label class="text-xs font-semibold text-slate-700">Village / Town (ग्राम / कस्बा) *</label>
+                <input type="text" id="field-village" placeholder="Village or locality" class="w-full text-xs p-2.5 rounded border border-slate-300 focus:ring-1 focus:ring-gov-600 focus:outline-none">
+              </div>
+
+              <!-- State / UT (Searchable Cascading Dropdown) -->
+              <div class="space-y-1">
+                <label class="text-xs font-semibold text-slate-700">State / Union Territory *</label>
+                <select id="field-state-select" onchange="handleStateSelectionChange(this.value)" class="w-full text-xs p-2.5 rounded border border-slate-300 focus:ring-1 focus:ring-gov-600 focus:outline-none bg-white">
+                  <option value="">Select State / UT</option>
+                  <!-- Populated from india-administrative-divisions.json -->
+                </select>
+                <input type="hidden" id="field-state">
+              </div>
+
+              <!-- District (Cascading Dropdown Filtered by State) -->
+              <div class="space-y-1">
+                <label class="text-xs font-semibold text-slate-700">District (जिला) *</label>
+                <select id="field-district-select" onchange="handleDistrictSelectionChange(this.value)" class="w-full text-xs p-2.5 rounded border border-slate-300 focus:ring-1 focus:ring-gov-600 focus:outline-none bg-white" disabled>
+                  <option value="">Select District</option>
+                  <!-- Filtered by selected state -->
+                </select>
+                <input type="hidden" id="field-district">
+              </div>
+
+              <!-- Duration -->
+              <div class="space-y-1">
+                <label class="text-xs font-semibold text-slate-700">Duration of Problem (अवधि) *</label>
+                <input type="text" id="field-duration" placeholder="Example: 3 months" class="w-full text-xs p-2.5 rounded border border-slate-300 focus:ring-1 focus:ring-gov-600 focus:outline-none">
+              </div>
+
+              <!-- Scheme / Service -->
+              <div class="space-y-1">
+                <label class="text-xs font-semibold text-slate-700">Scheme / Service (योजना)</label>
+                <input type="text" id="field-scheme" oninput="handleSearchContextChange()" placeholder="e.g. Social Welfare Pension, NFSA" class="w-full text-xs p-2.5 rounded border border-slate-300 focus:ring-1 focus:ring-gov-600 focus:outline-none">
+              </div>
+
+              <!-- Grievance Classification -->
+              <div class="col-span-1 md:col-span-2 lg:col-span-3 space-y-1">
+                <label class="text-xs font-semibold text-slate-700">Grievance Classification / Problem Details *</label>
+                <input type="text" id="field-issue" oninput="handleSearchContextChange()" placeholder="Core complaint description" class="w-full text-xs p-2.5 rounded border border-slate-300 focus:ring-1 focus:ring-gov-600 focus:outline-none">
+              </div>
+
+              <!-- Competent Department -->
+              <div class="col-span-1 md:col-span-2 lg:col-span-3 space-y-1">
+                <label class="text-xs font-semibold text-slate-700">Competent Redressal Department</label>
+                <input type="text" id="field-department" oninput="handleSearchContextChange()" placeholder="Target administrative office" class="w-full text-xs p-2.5 rounded border border-slate-300 focus:ring-1 focus:ring-gov-600 focus:outline-none">
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Navigation & SerpApi Action Button -->
+          <div class="flex justify-between items-center pt-4 border-t border-slate-100">
+            <button onclick="goToStep(1)" class="px-4 py-2 border border-slate-300 rounded text-xs text-slate-600 hover:bg-slate-50">
+              ← Back to Problem
+            </button>
+            <button id="btn-serpapi-search" onclick="handleSearchOfficialGovSources()" class="px-6 py-3 bg-gov-700 hover:bg-gov-800 text-white text-xs sm:text-sm font-bold rounded-lg shadow-sm flex items-center space-x-2">
+              <span id="serpapi-btn-spinner" class="hidden animate-spin h-3.5 w-3.5 border-2 border-white border-t-transparent rounded-full"></span>
+              <span id="serpapi-btn-text">🔎 Search Official Gov Sources via SerpApi →</span>
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- STEP 3: VERIFY & FIND INFORMATION (सही सरकारी जानकारी जाँच रहे हैं) -->
+      <div id="step-panel-3" class="step-panel space-y-4 hidden">
+        <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-xs space-y-5">
+          
+          <!-- AI Voice Guide Card -->
+          <div class="bg-gov-50 border border-gov-200 rounded-xl p-4 flex items-center justify-between gap-3">
+            <div class="flex items-center space-x-3">
+              <span class="text-2xl">🤖</span>
+              <div>
+                <span class="text-[10px] font-bold text-gov-800 uppercase tracking-wider" data-i18n="ai_voice_guide">AI Voice Guide</span>
+                <p id="guide-step3-text" class="text-xs sm:text-sm font-semibold text-slate-800">हम आधिकारिक सरकारी पोर्टल और नियम खोज रहे हैं।</p>
+                <p data-tts-note-for="guide-step3-text" class="text-[11px] text-amber-800" aria-live="polite"></p>
+              </div>
+            </div>
+            <button onclick="speakVoiceGuide('guide-step3-text')" class="px-3 py-1.5 bg-white border border-gov-300 hover:bg-gov-100 text-gov-800 rounded-lg text-xs font-bold flex items-center space-x-1 whitespace-nowrap shadow-2xs">
+              <span>🔊</span>
+              <span data-i18n="btn_listen">सुनें / Listen</span>
+            </button>
+          </div>
+
+          <!-- SerpApi Query Bar & Engine Status -->
+          <div class="space-y-2">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+              <div>
+                <h4 class="text-sm font-bold text-slate-900">SerpApi Official Indian Government Search</h4>
+                <p class="text-xs text-slate-500">Restricted to authoritative Indian government domains (<code class="font-mono text-gov-800 bg-slate-100 px-1 rounded">site:gov.in</code> / <code class="font-mono text-gov-800 bg-slate-100 px-1 rounded">site:nic.in</code>)</p>
+              </div>
+              <div id="serp-engine-tag" class="text-xs font-mono">
+                <!-- Live or Demo tag populated via JS -->
+              </div>
+            </div>
+
+            <!-- Query Input -->
+            <div class="flex flex-col sm:flex-row gap-2">
+              <div class="relative flex-1">
+                <input type="text" id="serp-query-input" class="w-full text-xs p-3 pr-20 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-600 focus:outline-none font-mono">
+                <span class="absolute right-3 top-3 text-[10px] text-slate-400 font-mono">site:gov.in</span>
+              </div>
+              <button onclick="executeSerpSearchManual()" id="btn-manual-serp-search" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg shadow whitespace-nowrap">
+                🔍 Re-Search Sources
+              </button>
+            </div>
+          </div>
+
+          <!-- Loading Indicator -->
+          <div id="serp-loading" class="hidden py-8 text-center space-y-2">
+            <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-blue-600 border-t-transparent"></div>
+            <p class="text-xs text-slate-500 font-medium">Querying SerpApi for official government portals and statutory procedures...</p>
+          </div>
+
+          <!-- Results Summary Bar -->
+          <div id="serp-results-bar" class="flex justify-between items-center text-xs p-3 bg-slate-50 rounded-lg border border-slate-200">
+            <div>
+              <strong>Found:</strong> <span id="serp-total-count">0</span> sources (<span id="serp-gov-count" class="text-emerald-700 font-semibold">0 Official Government Domains</span>)
+            </div>
+            <div class="text-[11px] text-slate-500">4-Tier Verification Workflow</div>
+          </div>
+
+          <!-- Source Verification Cards Container -->
+          <div id="source-review-cards" class="space-y-3">
+            <!-- Populated via JS -->
+          </div>
+
+          <!-- Claim ↔ Source Mapping Section -->
+          <div class="space-y-3 pt-4 border-t border-slate-100">
+            <div>
+              <h4 class="text-sm font-bold text-slate-900">🔗 Traceable Claim ↔ Source Mapping</h4>
+              <p class="text-xs text-slate-500">Clearly separates citizen declarations from official statutory procedures</p>
+            </div>
+
+            <div class="overflow-x-auto">
+              <table class="min-w-full divide-y divide-slate-200 text-xs">
+                <thead class="bg-slate-50 text-slate-600">
+                  <tr>
+                    <th class="px-4 py-2.5 text-left font-semibold">Information / Claim</th>
+                    <th class="px-4 py-2.5 text-left font-semibold">Type</th>
+                    <th class="px-4 py-2.5 text-left font-semibold">Underlying Source Reference</th>
+                    <th class="px-4 py-2.5 text-left font-semibold">Verification State</th>
+                  </tr>
+                </thead>
+                <tbody id="claim-mapping-tbody" class="divide-y divide-slate-100">
+                  <!-- Populated via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Operator Verification Audit Checklist -->
+          <div class="space-y-3 pt-4 border-t border-slate-100">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+              <div>
+                <h4 class="text-sm font-bold text-slate-900">✅ Operator Verification Audit Checklist</h4>
+                <p class="text-xs text-slate-500">Every criterion must be confirmed before authorizing document creation</p>
+              </div>
+              <button type="button" onclick="quickVerifyAllChecklist()" class="px-3 py-1.5 bg-gov-50 hover:bg-gov-100 text-gov-800 border border-gov-300 rounded font-semibold text-xs whitespace-nowrap">
+                ✓ Quick Verify All (Operator Audit)
+              </button>
+            </div>
+
+            <!-- Verification Status Banner -->
+            <div id="checklist-status-banner" class="p-3 bg-amber-50 border border-amber-300 rounded-lg text-xs text-amber-900">
+              ⚠️ Required operator verification checklist is currently pending. Please verify criteria below.
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+              <label class="flex items-center space-x-2.5 p-2 bg-slate-50 rounded border border-slate-200 cursor-pointer hover:bg-white">
+                <input type="checkbox" id="chk-citizen" class="h-4 w-4 text-gov-700 rounded border-slate-300" onchange="evaluateChecklist()">
+                <span>1. Citizen identity & location confirmed</span>
+              </label>
+
+              <label class="flex items-center space-x-2.5 p-2 bg-slate-50 rounded border border-slate-200 cursor-pointer hover:bg-white">
+                <input type="checkbox" id="chk-transcript" class="h-4 w-4 text-gov-700 rounded border-slate-300" onchange="evaluateChecklist()">
+                <span>2. Spoken dialect transcript reviewed</span>
+              </label>
+
+              <label class="flex items-center space-x-2.5 p-2 bg-slate-50 rounded border border-slate-200 cursor-pointer hover:bg-white">
+                <input type="checkbox" id="chk-required" class="h-4 w-4 text-gov-700 rounded border-slate-300" onchange="evaluateChecklist()">
+                <span>3. All mandatory fields complete</span>
+              </label>
+
+              <label class="flex items-center space-x-2.5 p-2 bg-slate-50 rounded border border-slate-200 cursor-pointer hover:bg-white">
+                <input type="checkbox" id="chk-contradiction" class="h-4 w-4 text-gov-700 rounded border-slate-300" onchange="evaluateChecklist()">
+                <span>4. No contradictory dates or locations</span>
+              </label>
+
+              <label class="flex items-center space-x-2.5 p-2 bg-slate-50 rounded border border-slate-200 cursor-pointer hover:bg-white">
+                <input type="checkbox" id="chk-source" class="h-4 w-4 text-gov-700 rounded border-slate-300" onchange="evaluateChecklist()">
+                <span>5. Official government portal (.gov.in/.nic.in) matched</span>
+              </label>
+
+              <label class="flex items-center space-x-2.5 p-2 bg-slate-50 rounded border border-slate-200 cursor-pointer hover:bg-white">
+                <input type="checkbox" id="chk-reviewed" class="h-4 w-4 text-gov-700 rounded border-slate-300" onchange="evaluateChecklist()">
+                <span>6. Enclosures and rules verified by operator</span>
+              </label>
+
+              <label class="flex items-center space-x-2.5 p-2 bg-slate-50 rounded border border-slate-200 cursor-pointer hover:bg-white">
+                <input type="checkbox" id="chk-template" class="h-4 w-4 text-gov-700 rounded border-slate-300" onchange="evaluateChecklist()">
+                <span>7. Appropriate grievance template selected</span>
+              </label>
+
+              <label class="flex items-center space-x-2.5 p-2 bg-slate-50 rounded border border-slate-200 cursor-pointer hover:bg-white">
+                <input type="checkbox" id="chk-final" class="h-4 w-4 text-gov-700 rounded border-slate-300" onchange="evaluateChecklist()">
+                <span>8. Application explained to citizen</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Navigation & Create Application Button -->
+          <div class="flex justify-between items-center pt-4 border-t border-slate-100">
+            <button onclick="goToStep(2)" class="px-4 py-2 border border-slate-300 rounded text-xs text-slate-600 hover:bg-slate-50">
+              ← Back to Details
+            </button>
+            <button id="btn-create-application" onclick="handleProceedToCreateApplication()" class="px-6 py-3 bg-gov-700 hover:bg-gov-800 text-white text-xs sm:text-sm font-bold rounded-lg shadow-sm flex items-center space-x-2">
+              <span>📄 Create Application →</span>
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- STEP 4: CREATE APPLICATION (आपका आवेदन तैयार है) -->
+      <div id="step-panel-4" class="step-panel space-y-4 hidden">
+        <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-xs space-y-5">
+          
+          <!-- AI Voice Guide Card -->
+          <div class="bg-gov-50 border border-gov-200 rounded-xl p-4 flex items-center justify-between gap-3">
+            <div class="flex items-center space-x-3">
+              <span class="text-2xl">🤖</span>
+              <div>
+                <span class="text-[10px] font-bold text-gov-800 uppercase tracking-wider" data-i18n="ai_voice_guide">AI Voice Guide</span>
+                <p id="guide-step4-text" class="text-xs sm:text-sm font-semibold text-slate-800">आपका आवेदन तैयार है। आप इसे देख सकते हैं और डाउनलोड कर सकते हैं।</p>
+                <p data-tts-note-for="guide-step4-text" class="text-[11px] text-amber-800" aria-live="polite"></p>
+              </div>
+            </div>
+            <button onclick="speakVoiceGuide('guide-step4-text')" class="px-3 py-1.5 bg-white border border-gov-300 hover:bg-gov-100 text-gov-800 rounded-lg text-xs font-bold flex items-center space-x-1 whitespace-nowrap shadow-2xs">
+              <span>🔊</span>
+              <span data-i18n="btn_listen">सुनें / Listen</span>
+            </button>
+          </div>
+
+          <!-- Application Submission Status Clarification Banner -->
+          <div class="bg-amber-50 border border-amber-300 rounded-xl p-3.5 flex items-start space-x-3 text-xs text-amber-900">
+            <span class="text-xl">📋</span>
+            <div>
+              <span class="font-bold block">Status: Operator Verified — Ready to Submit</span>
+              <p class="text-[11px] text-amber-800 mt-0.5 leading-relaxed">
+                This grievance application has been verified and prepared for submission. Please submit this official application to the competent authority / Gram Panchayat / Jan Seva Kendra / official grievance portal.
+              </p>
+            </div>
+          </div>
+
+          <!-- Template Selection Cards -->
+          <div class="space-y-2">
+            <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider">Select Standardized Official Format</h4>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3" id="template-options-container">
+              <!-- Pension Template -->
+              <div id="tmpl-card-pension" onclick="selectTemplate('pension')" class="border-2 border-gov-700 bg-gov-50/40 rounded-xl p-3.5 cursor-pointer hover:shadow-xs transition">
+                <div class="flex justify-between items-start">
+                  <span class="text-xl">👴</span>
+                  <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-gov-700 text-white font-bold">Selected</span>
+                </div>
+                <h5 class="font-bold text-xs text-slate-900 mt-1">Social Welfare Pension Grievance</h5>
+                <p class="text-[11px] text-slate-600 font-devanagari">सामाजिक सुरक्षा पेंशन शिकायत आवेदन</p>
+                <div class="mt-2 text-[10px] text-slate-500">Version: v1.2-2026 | Reviewed: 28 Mar 2026</div>
+              </div>
+
+              <!-- Water Template -->
+              <div id="tmpl-card-water" onclick="selectTemplate('water')" class="border border-slate-200 bg-white rounded-xl p-3.5 cursor-pointer hover:shadow-xs transition">
+                <div class="flex justify-between items-start">
+                  <span class="text-xl">🚰</span>
+                  <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-100 text-slate-600">Standard</span>
+                </div>
+                <h5 class="font-bold text-xs text-slate-900 mt-1">Drinking Water & Civic Amenities</h5>
+                <p class="text-[11px] text-slate-600 font-devanagari">पेयजल एवं जनसुविधा व्यवधान निवारण</p>
+                <div class="mt-2 text-[10px] text-slate-500">Version: v1.1-2026 | Reviewed: 28 Mar 2026</div>
+              </div>
+
+              <!-- General Template -->
+              <div id="tmpl-card-general" onclick="selectTemplate('general')" class="border border-slate-200 bg-white rounded-xl p-3.5 cursor-pointer hover:shadow-xs transition">
+                <div class="flex justify-between items-start">
+                  <span class="text-xl">🏛️</span>
+                  <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-100 text-slate-600">Standard</span>
+                </div>
+                <h5 class="font-bold text-xs text-slate-900 mt-1">General Citizen Public Grievance</h5>
+                <p class="text-[11px] text-slate-600 font-devanagari">सामान्य जन शिकायत एवं समाधान</p>
+                <div class="mt-2 text-[10px] text-slate-500">Version: v1.0-2026 | Reviewed: 28 Mar 2026</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Document Language Switcher & Actions Header -->
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pt-2 border-t border-slate-100">
+            <div class="flex border-b border-slate-200 space-x-2">
+              <button id="tab-btn-hi" onclick="switchDocTab('hi')" class="py-2 px-3 border-b-2 border-gov-700 text-gov-800 font-bold text-xs">
+                Selected Language Application
+              </button>
+              <button id="tab-btn-en" onclick="switchDocTab('en')" class="py-2 px-3 border-b-2 border-transparent text-slate-500 hover:text-slate-800 font-semibold text-xs">
+                English Grievance Application
+              </button>
+              <button id="tab-btn-split" onclick="switchDocTab('split')" class="py-2 px-3 border-b-2 border-transparent text-slate-500 hover:text-slate-800 font-semibold text-xs hidden md:block">
+                Side-by-Side Comparison
+              </button>
+            </div>
+
+            <!-- Download & Print Actions -->
+            <div class="flex flex-wrap gap-2">
+              <button id="btn-submit-application-top" onclick="submitApplicationAction()" class="px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white text-xs font-bold rounded-lg shadow-xs flex items-center space-x-1.5 transition">
+                <span>🌐 Submit on Official Portal</span>
+              </button>
+              <button onclick="downloadDocumentPDF()" class="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-lg shadow-xs flex items-center space-x-1.5">
+                <span>📥 Download PDF (.pdf)</span>
+              </button>
+              <button onclick="openPrintableWindow()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-lg border border-slate-300 flex items-center space-x-1.5 shadow-2xs">
+                <span>🖨️ Print / Vector PDF View</span>
+              </button>
+              <button onclick="regenerateDocument()" class="px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-lg border border-slate-300 shadow-2xs">
+                🔄 Regenerate
+              </button>
+            </div>
+          </div>
+
+          <!-- Document Preview Sheets Area -->
+          <div id="doc-preview-area" class="space-y-4">
+            
+            <!-- Regional View -->
+            <div id="doc-view-hi" class="doc-sheet rounded-xl p-6 border border-slate-200 bg-white space-y-4">
+              <div class="border-b border-slate-200 pb-3 flex justify-between items-center text-xs">
+                <span class="font-bold text-gov-800 font-regional text-base" id="hi-doc-title">सामाजिक सुरक्षा पेंशन शिकायत एवं समाधान आवेदन</span>
+                <span class="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold">✓ सत्यापित प्रारूप (Verified Format)</span>
+              </div>
+              <textarea id="hi-doc-body-edit" rows="12" class="w-full text-xs font-regional text-slate-800 p-3 rounded border border-slate-200 focus:ring-1 focus:ring-gov-600 focus:outline-none leading-relaxed font-sans"></textarea>
+              
+              <!-- Source citations footer -->
+              <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-900 space-y-1">
+                <div class="font-bold flex items-center space-x-1">
+                  <span>📌</span>
+                  <span>सत्यापित सरकारी पोर्टल एवं मार्गदर्शिका संदर्भ (Discovered via SerpApi):</span>
+                </div>
+                <div id="hi-doc-sources" class="text-[11px] whitespace-pre-wrap font-mono text-blue-800"></div>
+              </div>
+
+              <!-- Disclaimer -->
+              <div id="hi-doc-disclaimer" class="text-[10px] text-slate-400 italic border-t border-slate-100 pt-2 font-regional"></div>
+            </div>
+
+            <!-- English View -->
+            <div id="doc-view-en" class="doc-sheet rounded-xl p-6 border border-slate-200 bg-white space-y-4 hidden">
+              <div class="border-b border-slate-200 pb-3 flex justify-between items-center text-xs">
+                <span class="font-bold text-gov-800 text-base" id="en-doc-title">Social Welfare Pension Grievance Application</span>
+                <span class="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold">✓ Verified Format</span>
+              </div>
+              <textarea id="en-doc-body-edit" rows="12" class="w-full text-xs text-slate-800 p-3 rounded border border-slate-200 focus:ring-1 focus:ring-gov-600 focus:outline-none leading-relaxed font-sans"></textarea>
+              
+              <!-- Source citations footer -->
+              <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-900 space-y-1">
+                <div class="font-bold flex items-center space-x-1">
+                  <span>📌</span>
+                  <span>Verified Statutory Government Sources (Discovered via SerpApi):</span>
+                </div>
+                <div id="en-doc-sources" class="text-[11px] whitespace-pre-wrap font-mono text-blue-800"></div>
+              </div>
+
+              <!-- Disclaimer -->
+              <div id="en-doc-disclaimer" class="text-[10px] text-slate-400 italic border-t border-slate-100 pt-2"></div>
+            </div>
+
+            <!-- Side-by-Side Split View -->
+            <div id="doc-view-split" class="grid grid-cols-1 md:grid-cols-2 gap-4 hidden">
+              <!-- Populated dynamically via JS -->
+            </div>
+
+          </div>
+
+          <!-- Bottom Actions -->
+          <div class="flex justify-between items-center pt-4 border-t border-slate-100">
+            <button onclick="goToStep(3)" class="px-4 py-2 border border-slate-300 rounded text-xs text-slate-600 hover:bg-slate-50">
+              ← Back to Verification
+            </button>
+            <div class="flex flex-wrap gap-2">
+              <button id="btn-submit-application-bottom" onclick="submitApplicationAction()" class="px-5 py-2.5 bg-blue-700 hover:bg-blue-800 text-white text-xs sm:text-sm font-bold rounded-lg shadow-sm flex items-center space-x-1.5 transition">
+                <span>🌐 Submit on Official Portal</span>
+              </button>
+              <button onclick="downloadDocumentPDF()" class="px-5 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs sm:text-sm font-bold rounded-lg shadow-sm flex items-center space-x-1.5">
+                <span>📥 Download PDF (.pdf)</span>
+              </button>
+              <button onclick="openPrintableWindow()" class="px-5 py-2.5 bg-gov-700 hover:bg-gov-800 text-white text-xs sm:text-sm font-bold rounded-lg shadow-sm flex items-center space-x-1.5">
+                <span>🖨️ Ready-to-Submit View</span>
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- SERPAPI CONFIGURATION MODAL -->
+  <div id="serp-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-200 space-y-4">
+      <div class="flex justify-between items-start">
+        <div>
+          <h3 class="font-bold text-slate-900 text-base flex items-center space-x-2">
+            <span>⚙️ SerpApi Configuration</span>
+          </h3>
+          <p class="text-xs text-slate-500 mt-0.5">Backend official search engine integration</p>
+        </div>
+        <button onclick="closeSerpModal()" class="text-slate-400 hover:text-slate-600 text-lg font-bold">&times;</button>
+      </div>
+
+      <div class="space-y-2">
+        <label class="text-xs font-semibold text-slate-700">SerpApi Private API Key:</label>
+        <input type="password" id="serp-key-input" placeholder="Enter key (e.g. 5f8a...)" class="w-full text-xs p-2.5 rounded border border-slate-300 font-mono focus:ring-2 focus:ring-blue-600 focus:outline-none">
+        <p class="text-[11px] text-slate-500">
+          The API key is securely handled by the Python backend and never exposed to the browser.
+        </p>
+      </div>
+
+      <div class="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-900">
+        <strong>Demo Mode Active:</strong> If left empty, the system automatically uses authentic verified Indian government portals (<code class="font-mono">pgportal.gov.in</code>, <code class="font-mono">pensionersportal.gov.in</code>, <code class="font-mono">jaljeevanmission.gov.in</code>) so demonstrations are 100% resilient.
+      </div>
+
+      <div class="flex justify-end space-x-2 pt-2">
+        <button onclick="closeSerpModal()" class="px-4 py-2 border border-slate-300 rounded text-xs text-slate-600 hover:bg-slate-50">Cancel</button>
+        <button onclick="saveSerpApiKey()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-bold shadow">Save Configuration</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER CIVIC DISCLAIMER -->
+  <footer class="bg-white border-t border-slate-200 mt-auto py-4">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center text-xs text-slate-500 gap-2">
+      <div>
+        <strong>Awaaz Adhikar</strong> • Civic Grievance Documentation &amp; Verification System
+      </div>
+      <div class="italic text-[11px] text-center md:text-right text-slate-400">
+        Disclaimer: This tool assists with documentation and source discovery. It does not provide legal advice or guarantee administrative approval.
+      </div>
+    </div>
+  </footer>
+
+  <!-- ============================================================ -->
+  <!-- CITIZEN TRACKING MODAL                                        -->
+  <!-- ============================================================ -->
+  <div id="citizen-track-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/60 px-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 space-y-5 relative">
+      <button onclick="closeCitizenTrackModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 text-2xl font-bold leading-none">×</button>
+      <div class="text-center space-y-1">
+        <div class="text-3xl">📋</div>
+        <h2 class="text-xl font-bold text-slate-900">Track My Complaint</h2>
+        <p class="text-sm text-slate-500">Enter your Case ID and registered mobile number to track your grievance.</p>
+      </div>
+
+      <!-- Step 1: Case ID + Mobile -->
+      <div id="track-step-1" class="space-y-4">
+        <div id="track-error-1" class="hidden p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-sm"></div>
+        <div class="space-y-1">
+          <label class="text-sm font-semibold text-slate-700">Case ID</label>
+          <input type="text" id="track-case-id" placeholder="e.g. CASE-DEMO-001" class="w-full text-sm p-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-gov-600 focus:outline-none uppercase" oninput="this.value=this.value.toUpperCase()">
+        </div>
+        <div class="space-y-1">
+          <label class="text-sm font-semibold text-slate-700">Registered Mobile Number</label>
+          <input type="tel" id="track-mobile" placeholder="10-digit mobile number" maxlength="10" class="w-full text-sm p-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-gov-600 focus:outline-none">
+        </div>
+        <button onclick="citizenRequestOtp()" id="btn-request-otp" class="w-full py-3 bg-gov-700 hover:bg-gov-800 text-white font-bold text-sm rounded-lg transition">
+          Send Verification Code via SMS →
+        </button>
+      </div>
+
+      <!-- Step 2: OTP -->
+      <div id="track-step-2" class="hidden space-y-4">
+        <div id="track-error-2" class="hidden p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-sm"></div>
+        <p class="text-sm text-slate-600 bg-gov-50 border border-gov-200 rounded-lg p-3">
+          A 6-digit verification code has been dispatched to your mobile number via SMS. Valid for 5 minutes.
+        </p>
+        <div class="space-y-1">
+          <label class="text-sm font-semibold text-slate-700">Enter 6-Digit OTP</label>
+          <input type="text" id="track-otp" placeholder="6-digit code" maxlength="6" class="w-full text-sm p-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-gov-600 focus:outline-none font-mono tracking-widest text-center text-lg">
+        </div>
+        <button onclick="citizenVerifyOtp()" id="btn-verify-otp" class="w-full py-3 bg-gov-700 hover:bg-gov-800 text-white font-bold text-sm rounded-lg transition">
+          🔍 Track My Complaint
+        </button>
+        <button onclick="document.getElementById('track-step-2').classList.add('hidden'); document.getElementById('track-step-1').classList.remove('hidden');" class="w-full py-2 text-sm text-slate-500 hover:text-slate-800">
+          ← Back
+        </button>
+      </div>
+
+      <!-- Step 3: Case Result -->
+      <div id="track-step-3" class="hidden space-y-4">
+        <div class="bg-gov-50 border border-gov-200 rounded-xl p-5 space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-gov-800 uppercase tracking-wider">Your Complaint</span>
+            <span id="track-status-badge" class="text-xs font-bold px-2 py-1 rounded-full bg-amber-100 text-amber-800"></span>
+          </div>
+          <div class="space-y-2 text-sm">
+            <div><span class="font-semibold text-slate-600">Case ID:</span> <span id="track-result-id" class="font-mono text-slate-900"></span></div>
+            <div><span class="font-semibold text-slate-600">Applicant:</span> <span id="track-result-name" class="text-slate-900"></span></div>
+            <div><span class="font-semibold text-slate-600">Issue:</span> <span id="track-result-issue" class="text-slate-900"></span></div>
+            <div><span class="font-semibold text-slate-600">Location:</span> <span id="track-result-location" class="text-slate-900"></span></div>
+            <div><span class="font-semibold text-slate-600">Filed On:</span> <span id="track-result-date" class="text-slate-900"></span></div>
+            <div><span class="font-semibold text-slate-600">Center:</span> <span id="track-result-center" class="text-slate-900"></span></div>
+          </div>
+          <div class="p-2.5 bg-amber-50/80 border border-amber-200 rounded-lg text-[11px] text-amber-900">
+            ℹ️ <strong>Status Notice:</strong> This application has been verified and prepared for submission. Please submit this downloaded document to the competent authority, Gram Panchayat, Jan Seva Kendra, or official grievance portal.
+          </div>
+        </div>
+        <div id="track-pdf-section" class="hidden">
+          <p class="text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg p-3 font-medium">
+            ✓ Your application has been verified. You may download your official document.
+          </p>
+          <button onclick="citizenDownloadPdf()" class="w-full mt-2 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-lg transition">
+            📄 Download Official Application
+          </button>
+        </div>
+        <div id="track-pending-section" class="hidden">
+          <p class="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-3 font-medium">
+            ⏳ Your complaint is being processed. The official document will be available once the operator completes verification.
+          </p>
+        </div>
+        <button onclick="closeCitizenTrackModal()" class="w-full py-2 text-sm text-slate-500 hover:text-slate-800">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- DOCUMENT REVIEW CARD MODAL (before PDF)                       -->
+  <!-- ============================================================ -->
+  <div id="doc-review-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/60 px-4 overflow-y-auto">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl p-8 space-y-5 relative my-8">
+      <div class="text-center space-y-1">
+        <div class="text-3xl">📝</div>
+        <h2 class="text-xl font-bold text-slate-900">Review Application Wording</h2>
+        <p class="text-sm text-slate-500">Please review how the citizen's problem will appear in the application. Confirm or edit before generating the PDF.</p>
+      </div>
+
+      <!-- Validation errors -->
+      <div id="doc-review-errors" class="hidden p-4 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-sm space-y-1"></div>
+
+      <!-- Original -->
+      <div class="space-y-1">
+        <h3 class="text-xs font-bold text-slate-600 uppercase tracking-wider">Original Citizen Statement</h3>
+        <div id="review-original" class="p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-700 whitespace-pre-wrap max-h-32 overflow-y-auto"></div>
+      </div>
+
+      <!-- English wording -->
+      <div class="space-y-1">
+        <h3 class="text-xs font-bold text-blue-700 uppercase tracking-wider">English Application Wording</h3>
+        <div id="review-english" class="p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-slate-700 whitespace-pre-wrap max-h-40 overflow-y-auto"></div>
+      </div>
+
+      <!-- Regional wording -->
+      <div class="space-y-1">
+        <h3 id="review-regional-label" class="text-xs font-bold text-gov-700 uppercase tracking-wider">Selected Language Wording</h3>
+        <div id="review-regional" class="p-3 bg-gov-50 border border-gov-200 rounded-lg text-sm text-slate-700 whitespace-pre-wrap max-h-40 overflow-y-auto"></div>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex gap-3 pt-2">
+        <button id="btn-review-confirm" onclick="confirmDocReview()" class="flex-1 py-3 bg-gov-700 hover:bg-gov-800 text-white font-bold text-sm rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed">
+          ✓ Confirm &amp; Generate PDF
+        </button>
+        <button onclick="closeDocReviewModal()" class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm rounded-lg transition">
+          ✎ Edit / Cancel
+        </button>
+      </div>
+
+      <p id="doc-review-valid-msg" class="hidden text-xs text-emerald-700 text-center font-semibold">✓ Document validation passed. Ready to generate PDF.</p>
+      <p id="doc-review-invalid-msg" class="hidden text-xs text-rose-700 text-center font-semibold">✗ Validation failed. Fix errors before confirming.</p>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- SUBMIT APPLICATION GUIDANCE MODAL (CASE B: READY TO SUBMIT) -->
+  <!-- ============================================================ -->
+  <div id="submit-guidance-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/60 px-4 overflow-y-auto">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-xl p-7 space-y-5 relative my-8">
+      <div class="text-center space-y-1">
+        <div class="text-3xl">📋</div>
+        <h2 class="text-lg font-bold text-slate-900">Application Submission Status</h2>
+        <div class="inline-block mt-1">
+          <span class="px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300">
+            Application Ready — Not Yet Submitted
+          </span>
+        </div>
+      </div>
+
+      <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3 text-xs text-slate-700">
+        <p class="leading-relaxed">
+          <strong>Notice:</strong> This official grievance application has been <strong>verified by the CSC operator</strong> and prepared with all confirmed citizen facts and statutory departmental references.
+        </p>
+        <p class="leading-relaxed text-slate-600">
+          The government does not provide an unauthenticated direct API to automatically lodge citizen grievances without physical signature or portal login credentials. <strong>To complete filing, please follow the official submission steps below:</strong>
+        </p>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div class="p-3 bg-gov-50 border border-gov-200 rounded-lg flex items-start space-x-3">
+          <span class="text-lg">🏛️</span>
+          <div>
+            <strong class="text-gov-900 block">Route 1: Physical Counter / Jan Seva Kendra Submission</strong>
+            <p class="text-slate-600 mt-0.5">Download or print the verified bilingual document. Submit to your local Gram Panchayat office, Jan Seva Kendra, or the competent Sub-Divisional Officer.</p>
+          </div>
+        </div>
+
+        <div class="p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-start space-x-3">
+          <span class="text-lg">🌐</span>
+          <div>
+            <strong class="text-blue-900 block">Route 2: Official Online Grievance Portal</strong>
+            <p class="text-slate-600 mt-0.5">Lodge the verified application text directly on the discovered official government portal (e.g. CPGRAMS or your State Grievance Portal).</p>
+            <a id="submit-portal-external-link" href="#" target="_blank" rel="noopener noreferrer" class="inline-flex items-center space-x-1 mt-2 text-xs font-bold text-blue-700 hover:text-blue-900 underline hidden">
+              <span>Open Discovered Official Portal ↗</span>
+            </a>
+            <p id="route2-no-source-notice" class="mt-2 text-xs text-amber-800 font-medium hidden">
+              ⚠️ No sufficiently relevant official government source found for this grievance. Please submit via Route 1 physical counter.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex flex-col sm:flex-row gap-2 pt-2 border-t border-slate-100">
+        <button onclick="downloadDocumentPDF()" class="flex-1 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded-lg transition flex items-center justify-center space-x-1">
+          <span>📥 Download Verified PDF</span>
+        </button>
+        <button onclick="openPrintableWindow()" class="flex-1 py-2.5 bg-gov-700 hover:bg-gov-800 text-white font-bold text-xs rounded-lg transition flex items-center justify-center space-x-1">
+          <span>🖨️ Ready-to-Submit View</span>
+        </button>
+        <button onclick="closeSubmitGuidanceModal()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-lg transition">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
+

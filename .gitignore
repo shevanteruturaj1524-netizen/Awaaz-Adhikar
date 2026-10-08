@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Environment & secrets
+.env
+.env.local
+.env.production
+*.env
+
+# Application data (runtime, NOT committed)
+data/
+recordings/
+
+# Test artifacts & scratch
+proof_layer_b.py
+test_suite.py
+test_e2e_all.py
+test_multilingual.py
+check_dom.py
+verify_live_tunnel.py
+*.log
+
+# Editor & OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*~
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+database.db
+*.wav

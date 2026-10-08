@@ -1,0 +1,96 @@
+/* Custom styles for Awaaz Adhikar Civic Workspace */
+:root {
+  --primary-gov: #0f766e;
+  --primary-dark: #0f172a;
+  --accent-amber: #d97706;
+  --accent-blue: #0284c7;
+}
+
+body {
+  font-family: 'Inter', 'Noto Sans Devanagari', 'Noto Sans Bengali', system-ui, -apple-system, sans-serif;
+  background-color: #f1f5f9;
+  color: #1e293b;
+}
+
+/* Audio waveform animation */
+.wave-bar {
+  width: 4px;
+  background-color: #0f766e;
+  border-radius: 2px;
+  animation: pulse 1s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { height: 8px; }
+  50% { height: 28px; }
+}
+
+/* Stepper line */
+.step-line {
+  height: 3px;
+  flex: 1;
+  background: #cbd5e1;
+}
+
+.step-line.active {
+  background: #0f766e;
+}
+
+/* Badge styles */
+.badge-official {
+  background-color: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+.badge-warning {
+  background-color: #fffbeb;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+
+.badge-danger {
+  background-color: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+/* Missing Field Alert Highlight */
+.field-missing-highlight {
+  border-color: #ef4444 !important;
+  background-color: #fff5f5 !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.25) !important;
+  animation: shake 0.4s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+/* Document preview box */
+.doc-sheet {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+}
+
+/* Regional Font Support */
+.font-devanagari {
+  font-family: 'Noto Sans Devanagari', 'Inter', sans-serif;
+}
+
+.font-bengali {
+  font-family: 'Noto Sans Bengali', 'Inter', sans-serif;
+}
+
+.font-regional {
+  font-family: 'Noto Sans Devanagari', 'Noto Sans Bengali', 'Inter', sans-serif;
+}
+
+/* Smooth Focus States */
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: #0f766e;
+}

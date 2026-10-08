@@ -1,0 +1,72 @@
+[
+  {
+    "id": "sample-1",
+    "title": "Pension Non-Disbursement (Hindi)",
+    "language": "hi",
+    "category": "pension",
+    "transcript": "मेरा नाम रमेश कुमार है। मुझे 3 महीने से वृद्धावस्था पेंशन नहीं मिली है। मैं रामपुर गाँव, जिला सीतापुर, उत्तर प्रदेश से हूँ। बैंक वाले कह रहे हैं कि आधार सीडिंग चेक करो पर पेंशन नहीं आई।",
+    "citizen_name": "Ramesh Kumar",
+    "village": "Rampur",
+    "district": "Sitapur",
+    "state": "Uttar Pradesh",
+    "duration": "3 महीने",
+    "issue_type": "Non-Disbursement of Old Age Pension",
+    "query": "site:gov.in pension grievance procedure Uttar Pradesh"
+  },
+  {
+    "id": "sample-2",
+    "title": "Drinking Water Pipeline Leakage (Hindi)",
+    "language": "hi",
+    "category": "water",
+    "transcript": "मैं सुरेश चंद्रा, ग्राम कल्याणपुर, जिला अलवर राजस्थान से बोल रहा हूँ। हमारे गाँव में जल जीवन मिशन की मुख्य पाइपलाइन 15 दिनों से टूटी हुई है और पीने का पानी नहीं आ रहा है। कृपया समाधान करें।",
+    "citizen_name": "Suresh Chandra",
+    "village": "Kalyanpur",
+    "district": "Alwar",
+    "state": "Rajasthan",
+    "duration": "15 din",
+    "issue_type": "Drinking Water Supply Disruption",
+    "query": "site:gov.in jal jeevan mission water supply complaint Rajasthan"
+  },
+  {
+    "id": "sample-3",
+    "title": "Farmer PM-KISAN Subsidy (Marathi)",
+    "language": "mr",
+    "category": "pmkisan",
+    "transcript": "माझं नाव विलास तुकाराम पाटील आहे. मी मौजे शेवगाव, तालुका शेवगाव, जिल्हा अहमदनगर महाराष्ट्र येथून आहे. मला पीएम किसान सन्मान निधीचे शेवटचे दोन हप्ते मिळालेले नाहीत. खाते आधार लिंक आहे तरीही पैसे जमा झाले नाहीत.",
+    "citizen_name": "Vilas Tukaram Patil",
+    "village": "Shevgaon",
+    "district": "Ahmednagar",
+    "state": "Maharashtra",
+    "duration": "2 installments (6 months)",
+    "issue_type": "PM-KISAN Installment Not Credited",
+    "query": "site:gov.in pm kisan grievance portal Maharashtra"
+  },
+  {
+    "id": "sample-4",
+    "title": "Ration Distribution Irregularity (Bengali)",
+    "language": "bn",
+    "category": "ration",
+    "transcript": "আমার নাম স্বপন মজুমদার। আমি গ্রাম বিষ্ণুপুর, জেলা দক্ষিণ ২৪ পরগনা পশ্চিমবঙ্গ থেকে বলছি। গত ২ মাস ধরে আমাদের রেশন ডিলার চাল ও গম দিতে অস্বীকার করছে এবং বায়োমেট্রিক মেশিন খারাপ থাকার অজুহাত দিচ্ছে।",
+    "citizen_name": "Swapan Majumdar",
+    "village": "Bishnupur",
+    "district": "South 24 Parganas",
+    "state": "West Bengal",
+    "duration": "2 months",
+    "issue_type": "PDS Ration Denial by Dealer",
+    "query": "site:gov.in ration grievance complaint West Bengal"
+  },
+  {
+    "id": "sample-5",
+    "title": "Contradiction & Missing Info Test Case",
+    "language": "hi",
+    "category": "pension",
+    "transcript": "मुझे पेंशन नहीं मिली। पहले रामपुर में था फिर बिलासपुर गया। 6 महीने से परेशान हूँ या शायद 1 साल से। नाम लिखना भूल गया।",
+    "citizen_name": "Missing",
+    "village": "Rampur vs Bilaspur (Contradiction)",
+    "district": "Missing",
+    "state": "Missing",
+    "duration": "Conflicting (6 months / 1 year)",
+    "issue_type": "Pension Stoppage",
+    "query": "site:gov.in pension complaint grievance portal"
+  }
+]

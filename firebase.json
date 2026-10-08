@@ -1,0 +1,30 @@
+{
+  "hosting": {
+    "public": "static",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/__pycache__/**"
+    ],
+    "rewrites": [
+      {
+        "source": "/api/**",
+        "run": {
+          "serviceId": "awaaz-adhikar-backend",
+          "region": "asia-south1"
+        }
+      },
+      {
+        "source": "/document/**",
+        "run": {
+          "serviceId": "awaaz-adhikar-backend",
+          "region": "asia-south1"
+        }
+      },
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  }
+}
