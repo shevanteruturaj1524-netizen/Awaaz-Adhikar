@@ -546,8 +546,14 @@ def is_official_gov_domain(url: str) -> bool:
 
 
 def is_national_source(source: dict) -> bool:
+    domain = str(source.get("domain", "") or "").lower().strip()
+    url = str(source.get("url", "") or "").lower().strip()
+    if any(k in domain or k in url for k in ("pgportal.gov.in", "india.gov.in", "pgportal", "jaljeevanmission.gov.in", "dilrmp.gov.in", "nsap.nic.in", "pmkisan.gov.in", "nfsa.gov.in")):
+        return True
+    if source.get("is_national_fallback"):
+        return True
     text = normalize_search_text(" ".join(str(source.get(key, "") or "") for key in ("title", "snippet", "url", "domain")))
-    return any(term in text for term in ("national", "central", "ministry of", "government of india", "all india")) or "india.gov.in" in text or "pgportal.gov.in" in text or "jaljeevanmission.gov.in" in text
+    return any(term in text for term in ("national", "central", "ministry of", "government of india", "all india"))
 
 
 def is_unrelated_state_source(source: dict, extracted_fields: dict) -> bool:
@@ -586,27 +592,29 @@ def is_state_or_district_nodal(source: dict, extracted_fields: dict) -> bool:
 
 def check_source_relevance(source: dict, service_intent: str, extracted_fields: dict = None) -> bool:
     """
-    Strict relevance gate:
-    1. Rejects cross-department mismatches (e.g. vaccines/health for drinking water).
-    2. Rejects unrelated domains (recruitment, ssc, etc.).
-    3. Rejects state mismatch.
-    4. Permits authentic state nodal grievance portals and district administration portals.
-    5. Requires substantive core problem keyword match from title/snippet/URL.
+    Generic Substantive Relevance Gate:
+    1. Rejects unverified / commercial domains.
+    2. Rejects unrelated utility domains (recruitment, ssc, etc.).
+    3. Rejects state mismatch when candidate belongs to a different state.
+    4. National reference portals (CPGRAMS, India.gov.in) pass as reference fallbacks.
+    5. Permits authentic state nodal grievance portals and district administration portals.
+    6. Requires candidate to match at least one substantive problem domain term (nouns).
+       Rejects candidates that match only administrative functional words (e.g. 'supply').
     """
     extracted_fields = extracted_fields or {}
     title_text = normalize_search_text(str(source.get("title", "") or ""))
     snippet_text = normalize_search_text(str(source.get("snippet", "") or ""))
     url_text = normalize_search_text(str(source.get("url", "") or "") + " " + str(source.get("domain", "") or ""))
-    domain = str(source.get("domain", "") or "").lower()
+    domain = str(source.get("domain", "") or "").lower().strip()
+    url = str(source.get("url", "") or "").lower().strip()
     all_text = f"{title_text} {snippet_text} {url_text}"
 
     # 1. Officiality check
-    url = str(source.get("url", "") or "")
     if not (is_official_gov_domain(url) or source.get("is_official", False)):
         return False
 
     # 2. Unrelated domains check
-    if any(unrelated in domain or unrelated in url_text for unrelated in UNRELATED_GOV_DOMAINS):
+    if any(unrelated in domain or unrelated in url for unrelated in UNRELATED_GOV_DOMAINS):
         return False
 
     # 3. State mismatch check
@@ -614,37 +622,28 @@ def check_source_relevance(source: dict, service_intent: str, extracted_fields: 
         return False
 
     # 4. National reference portals (CPGRAMS, India.gov.in)
-    if "pgportal.gov.in" in all_text or "india.gov.in" in all_text or source.get("is_national_fallback"):
+    if "pgportal" in domain or "india.gov.in" in domain or "pgportal" in url or source.get("is_national_fallback"):
         return True
 
-    # Combined complaint text to detect citizen grievance domain
-    combined_complaint = normalize_search_text(" ".join([
-        str(service_intent or ""),
-        str(extracted_fields.get("problem_description", "") or ""),
-        str(extracted_fields.get("issue_type", "") or ""),
-        str(extracted_fields.get("scheme", "") or "")
-    ]))
-
-    # 5. CROSS-SECTOR COLLISION CHECK:
-    # If source contains markers of a specific domain (e.g. health/vaccines, education/recruitment),
-    # but citizen's grievance does NOT trigger that domain, it is an IRRELEVANT department mismatch.
-    for sector_name, profile in SECTOR_PROFILES.items():
-        if any(contains_search_phrase(all_text, marker) for marker in profile["markers"]):
-            if not any(contains_search_phrase(combined_complaint, trig) for trig in profile["triggers"]):
-                return False
-
-    # 6. State Nodal Public Grievance Portals (e.g. Rajasthan Sampark) and District Portals
+    # 5. State Nodal Public Grievance Portals (e.g. Rajasthan Sampark) and District Portals
     if is_state_or_district_nodal(source, extracted_fields):
         return True
 
-    # 7. SUBSTANTIVE SUBJECT MATCH:
-    # Source must match at least one substantive problem term (not operational stop words like 'supply')
+    # 6. SUBSTANTIVE SUBJECT MATCH:
+    # Source must match at least one substantive problem domain term (nouns), NOT mere operational words like 'supply'
     core_terms = extract_core_problem_terms(extracted_fields)
     if not core_terms:
         core_terms = [
             w for w in re.findall(r"[a-z]{3,}", (service_intent or "").lower())
             if w not in SEARCH_STOP_WORDS and w not in ADMIN_OPERATIONAL_WORDS
         ]
+
+    # If scheme or issue_type gives additional domain nouns, include them
+    scheme = str(extracted_fields.get("scheme", "") or "").lower()
+    if scheme and "general" not in scheme:
+        for sw in re.findall(r"[a-z]{3,}", scheme):
+            if sw not in SEARCH_STOP_WORDS and sw not in ADMIN_OPERATIONAL_WORDS and sw not in core_terms:
+                core_terms.append(sw)
 
     if core_terms:
         has_substantive = any(contains_search_phrase(all_text, term) or term in domain for term in core_terms)
@@ -846,7 +845,9 @@ def generate_gov_search_query(extracted_fields: dict) -> str:
 
     state = str(extracted_fields.get("state", "") or "").strip()
     district = str(extracted_fields.get("district", "") or "").strip()
-    issue_group = get_issue_group(extracted_fields)
+    scheme = str(extracted_fields.get("scheme", "") or "").strip()
+    service_intent = str(extracted_fields.get("service_intent", "") or "").strip()
+    issue_type = str(extracted_fields.get("issue_type", "") or "").strip()
 
     parts = ["(site:gov.in OR site:nic.in)"]
     if state and state.lower() not in {"none", "unknown", "missing", "india", "select state"}:
@@ -854,39 +855,18 @@ def generate_gov_search_query(extracted_fields: dict) -> str:
     if district and district.lower() not in {"none", "unknown", "missing", "select district"}:
         parts.append(district)
 
-    if issue_group and issue_group in ISSUE_GROUPS:
-        if issue_group == "scholarship":
-            parts.append("scholarship portal disbursement grievance")
-        elif issue_group == "land":
-            parts.append("land mutation revenue records biharbhumi dispute complaint")
-        elif issue_group == "road":
-            parts.append("municipal corporation road pothole drainage complaint")
-        elif issue_group == "ration":
-            parts.append("ration card PDS food civil supplies complaint grievance")
-        elif issue_group == "electricity":
-            parts.append("electricity complaint power supply outage discom")
-        elif issue_group == "water":
-            parts.append("water supply drinking water complaint grievance")
-        elif issue_group == "pension":
-            parts.append("pension social welfare complaint grievance")
-        elif issue_group == "pmkisan":
-            parts.append("PM Kisan installment complaint grievance")
-        else:
-            terms = ISSUE_GROUPS[issue_group]["terms"][:3]
-            parts.append(f"{' '.join(terms)} grievance complaint")
+    if scheme and "general" not in scheme.lower():
+        parts.append(scheme)
+    elif service_intent:
+        parts.append(service_intent)
+    elif issue_type and issue_type.lower() not in {"general public grievance", "general grievance"}:
+        parts.append(issue_type)
     else:
-        # Dynamically build from extracted core problem terms
         terms = extract_core_problem_terms(extracted_fields)
         if terms:
-            parts.append(" ".join(terms[:4]))
-            parts.append("portal complaint grievance")
-        else:
-            issue = str(extracted_fields.get("issue_type", "") or "").strip()
-            if issue and issue.lower() not in {"general public grievance", "general grievance"}:
-                parts.append(f"{issue} grievance complaint")
-            else:
-                parts.append("public grievance redressal")
+            parts.append(" ".join(terms[:3]))
 
+    parts.append("grievance redressal")
     return " ".join(parts)
 
 
@@ -1042,12 +1022,15 @@ def has_sufficient_local_results(sources: list, extracted_fields: dict) -> bool:
 
 def is_vague_service_intent(service_intent: str, query: str = "") -> bool:
     """
-    Checks if service_intent is too vague (for example only 'certificate' or 'pension' with no type,
-    or bare generic words like 'complaint', 'problem' with no specific service).
+    Checks if service_intent is genuinely too vague to identify ANY service
+    (for example only bare 'certificate' or 'praman patra' with no type specified).
+    Does NOT block search for specific grievances, pensions, or normal searches.
     """
     s = (service_intent or "").lower().strip()
     q = (query or "").lower().strip()
     combined = f"{s} {q}".strip()
+    if not combined:
+        return False
 
     cert_types = {
         "income", "caste", "birth", "death", "domicile", "residence",
@@ -1055,49 +1038,15 @@ def is_vague_service_intent(service_intent: str, query: str = "") -> bool:
         "ration", "aadhaar", "driving", "bonafide", "ews", "obc", "sc", "st"
     }
 
-    if "certificate" in combined or "praman" in combined:
+    if ("certificate" in combined or "praman" in combined or "dakhla" in combined):
         if not any(t in combined for t in cert_types):
             return True
-
-    pension_types = {
-        "old age", "vridha", "widow", "divyang", "disability", "nsap", "eps",
-        "epfo", "family", "defense", "military", "servicemen", "senior"
-    }
-    if "pension" in combined:
-        if not any(t in combined for t in pension_types):
-            words = re.findall(r"[a-z]{3,}", combined)
-            meaningful_non_pension = [
-                w for w in words
-                if w not in {
-                    "pension", "delay", "delayed", "not", "received", "complaint",
-                    "grievance", "issue", "problem", "karnataka", "bengaluru",
-                    "urban", "state", "district", "india", "portal", "help"
-                }
-            ]
-            if not meaningful_non_pension:
-                return True
-
-    generic_words = {
-        "delay", "delayed", "issuance", "complaint", "grievance", "public",
-        "service", "services", "civic", "problem", "issue", "portal", "help",
-        "karnataka", "bengaluru", "urban", "state", "district", "india"
-    }
-    meaningful = [w for w in re.findall(r"[a-z]{3,}", s) if w not in generic_words]
-    if not meaningful:
-        return True
 
     return False
 
 
 def get_vague_service_note(service_intent: str, query: str = "") -> str:
-    s = (service_intent or "").lower().strip()
-    q = (query or "").lower().strip()
-    combined = f"{s} {q}".strip()
-    if "pension" in combined:
-        return "Please specify the exact type of pension (for example old age pension, widow pension, or disability pension)."
-    if "certificate" in combined or "praman" in combined:
-        return "Please specify the exact type (for example income certificate)."
-    return "Please specify the exact government service or scheme name (for example income certificate or old age pension)."
+    return "Please specify the exact type (for example income certificate)."
 
 
 def validate_candidate_destination(source: dict, extracted_fields: dict, service_intent: str) -> dict:
@@ -1191,14 +1140,14 @@ def classify_and_annotate_source(source: dict, extracted_fields: dict, service_i
     district = str(extracted_fields.get("district", "") or "").strip()
     issue = str(extracted_fields.get("issue_type", "") or extracted_fields.get("problem_description", "") or "").strip()
 
-    # 1. NATIONAL REFERENCE: pgportal.gov.in, india.gov.in, jaljeevanmission.gov.in or any central reference
+    # 1. NATIONAL REFERENCE: pgportal.gov.in, india.gov.in or marked fallback
     if (
-        "pgportal.gov.in" in all_text
-        or "india.gov.in" in all_text
-        or "jaljeevanmission.gov.in" in all_text
+        "pgportal" in domain
+        or "india.gov.in" in domain
+        or "pgportal" in url
+        or "india.gov.in" in url
         or source.get("is_national_fallback")
         or "cpgrams" in all_text
-        or (is_national_source(source) and state)
     ):
         source["classification"] = "NATIONAL REFERENCE"
         source["is_national_fallback"] = True
@@ -1766,10 +1715,10 @@ def get_authentic_fallback_sources(query: str, extracted_fields: dict = None) ->
             },
             {
                 "id": f"src-{len(sources)+1}",
-                "title": "Annavitran Portal - State PDS Transparency & Allocation Monitoring",
+                "title": "Annavitran Portal - State PDS Ration Allocation & Transparency",
                 "url": "https://annavitran.nic.in/",
                 "domain": "annavitran.nic.in",
-                "snippet": "National PDS electronic allocation ledger. Track monthly food grain entitlements, Aadhaar e-KYC status, and dealer distribution records.",
+                "snippet": "National PDS ration card electronic allocation ledger. Track monthly food grain entitlements, Aadhaar e-KYC status, and dealer distribution records.",
                 "official_domain_status": "Official Government Domain (.gov.in/.nic.in)",
                 "is_official": True,
                 "relevance_status": "Related Statutory Authority",
