@@ -16,7 +16,8 @@ build/
 *.env
 
 # Application data (runtime, NOT committed)
-data/
+data/*
+!data/india-administrative-divisions.json
 recordings/
 
 # Test artifacts & scratch

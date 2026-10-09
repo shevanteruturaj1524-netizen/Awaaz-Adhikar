@@ -2,10 +2,12 @@ import re
 import json
 from pathlib import Path
 from typing import Dict, List, Any
-from config import DATA_DIR
+from config import DATA_DIR, STATIC_DIR
 
 # Load authoritative Indian administrative divisions
 DIVISIONS_FILE = DATA_DIR / "india-administrative-divisions.json"
+if not DIVISIONS_FILE.exists():
+    DIVISIONS_FILE = STATIC_DIR / "india-administrative-divisions.json"
 ADMINISTRATIVE_DIVISIONS: Dict[str, Any] = {}
 if DIVISIONS_FILE.exists():
     try:

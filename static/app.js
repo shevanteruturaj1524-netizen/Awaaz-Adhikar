@@ -567,12 +567,32 @@ async function launchInteractiveDemo() {
 
 async function loadAdministrativeLocations() {
   try {
-    const res = await fetch("/api/locations");
-    if (!res.ok) return;
-    ADMIN_DIVISIONS = await res.json();
+    let res = await fetch("/api/locations");
+    if (res.ok) {
+      const data = await res.json();
+      if (data && Object.keys(data).length > 0) {
+        ADMIN_DIVISIONS = data;
+      }
+    }
+    // Fallback if /api/locations is empty or failed
+    if (!ADMIN_DIVISIONS || Object.keys(ADMIN_DIVISIONS).length === 0) {
+      const staticRes = await fetch("/static/india-administrative-divisions.json");
+      if (staticRes.ok) {
+        ADMIN_DIVISIONS = await staticRes.json();
+      }
+    }
     populateStateDropdown();
   } catch (e) {
     console.error("Error loading administrative divisions:", e);
+    try {
+      const staticRes = await fetch("/static/india-administrative-divisions.json");
+      if (staticRes.ok) {
+        ADMIN_DIVISIONS = await staticRes.json();
+        populateStateDropdown();
+      }
+    } catch (err) {
+      console.error("Fallback load failed:", err);
+    }
   }
 }
 
@@ -584,11 +604,11 @@ function populateStateDropdown() {
   const states = [];
   const uts = [];
 
-  Object.keys(ADMIN_DIVISIONS).forEach(name => {
+  Object.keys(ADMIN_DIVISIONS || {}).forEach(name => {
     const item = ADMIN_DIVISIONS[name];
-    if (item.type === "UT") {
+    if (item && item.type === "UT") {
       uts.push(name);
-    } else {
+    } else if (item) {
       states.push(name);
     }
   });
@@ -596,25 +616,36 @@ function populateStateDropdown() {
   states.sort();
   uts.sort();
 
-  const stateGroup = document.createElement("optgroup");
-  stateGroup.label = "States (28)";
-  states.forEach(s => {
-    const opt = document.createElement("option");
-    opt.value = s;
-    opt.textContent = s;
-    stateGroup.appendChild(opt);
-  });
-  stateSelect.appendChild(stateGroup);
+  if (states.length > 0) {
+    const stateGroup = document.createElement("optgroup");
+    stateGroup.label = `States (${states.length})`;
+    states.forEach(s => {
+      const opt = document.createElement("option");
+      opt.value = s;
+      opt.textContent = s;
+      stateGroup.appendChild(opt);
+    });
+    stateSelect.appendChild(stateGroup);
+  }
 
-  const utGroup = document.createElement("optgroup");
-  utGroup.label = "Union Territories (8)";
-  uts.forEach(u => {
-    const opt = document.createElement("option");
-    opt.value = u;
-    opt.textContent = u;
-    utGroup.appendChild(opt);
-  });
-  stateSelect.appendChild(utGroup);
+  if (uts.length > 0) {
+    const utGroup = document.createElement("optgroup");
+    utGroup.label = `Union Territories (${uts.length})`;
+    uts.forEach(u => {
+      const opt = document.createElement("option");
+      opt.value = u;
+      opt.textContent = u;
+      utGroup.appendChild(opt);
+    });
+    stateSelect.appendChild(utGroup);
+  }
+
+  // If case already has an extracted state, reflect it in the select
+  const currentState = currentCase?.extracted_fields?.state;
+  if (currentState && ADMIN_DIVISIONS && ADMIN_DIVISIONS[currentState]) {
+    stateSelect.value = currentState;
+    handleStateSelectionChange(currentState, true);
+  }
 }
 
 function handleStateSelectionChange(selectedState, preserveSearchResults = false) {

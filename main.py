@@ -313,6 +313,8 @@ async def fetch_samples():
 @app.get("/api/locations")
 async def fetch_locations():
     loc_file = DATA_DIR / "india-administrative-divisions.json"
+    if not loc_file.exists():
+        loc_file = STATIC_DIR / "india-administrative-divisions.json"
     if loc_file.exists():
         return json.loads(loc_file.read_text(encoding="utf-8"))
     return {}
