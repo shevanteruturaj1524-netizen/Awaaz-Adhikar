@@ -4,6 +4,7 @@
 > **"Apni samasya apni bhasha mein batayein. Awaaz Adhikar aapki baat samajhne, relevant official government information dhoondhne aur application tayyar karne mein operator ki madad karta hai."**
 
 ---
+🌐 **Live Demo:** https://awaaz-adhikar.onrender.com
 
 ## 1. Project Overview
 **Awaaz Adhikar** is a civic documentation and verification platform built specifically for **Common Service Centre (CSC) operators, NGO workers, and rural help-desk operators**. It empowers operators to assist citizens in converting spoken or typed grievances in Indian languages (Hindi, Marathi, Bengali, English) into structured, source-backed, and verified bilingual petitions ready for official government submission.
@@ -165,16 +166,34 @@ FAST2SMS_API_KEY=your_fast2sms_api_key_here
 ---
 
 ## 12. Testing
-Run the automated test suites:
-```bash
-# Run 40-Point End-to-End Master Test Suite
-python scratch/test_40_suite.py
 
-# Run OTP & Session Test Suite
-python scratch/test_otp_suite.py
+Awaaz Adhikar includes automated tests for core workflows, grievance processing, security and validation.
+
+### Run the test suites
+
+From the project root directory, run:
+
+```powershell
+python run_required_tests.py
 ```
 
----
+To run the final verification suite:
+
+```powershell
+python verify_final_suite.py
+```
+
+Additional test files cover browser workflows, business logic, extraction, security, multilingual processing and public URL checks.
+
+### Test reporting
+
+Test results should be recorded as:
+
+- **PASS** — the test executed and passed.
+- **FAIL** — the test executed and failed.
+- **NOT TESTED** — the test could not be executed or requires manual verification.
+
+Physical microphone input, audio playback and live deployment behaviour should be marked as tested only after actual verification.
 
 ## 13. Deployment
 - **Localhost**: `http://127.0.0.1:8000`
